@@ -275,3 +275,43 @@ for i, doc in enumerate(tqdm(dev_documents, desc="Processing dev")):
     processed_dev.append(processed)
 
 print(f"✓ Dev data processed: {len(processed_dev)} documents")      
+
+
+#//////
+
+
+#Prepair dataset for BRET training
+
+class NERDataset(Dataset):              #the Dataset that we imported here => from torch.utils.data import Dataset
+     """Custom dataset for NER token classification."""
+#in PyTorch we define a class which has these 3 important functions in order to work with Dataset 
+     def __init__(self, processed_data, max_length=512):     #For getting and storing the data
+         self.data= processed_data
+         self.max_length= max_length
+
+     def __len__(self):                                     #For telling how many samples we have
+         return len(self.data)
+
+     def __getitem__(self, idx):                             #For getting a specific item from data
+            item = self.data[idx]
+            
+            # Pad or truncate to max_length
+            input_ids= item['input_ids'][:self.max_length]
+            attention_mask= item['attention_mask'][:self.max_length]     #for separating true tokens(1's) and paddings(0's)
+            labels= item['labels'][:self.max_length]
+    
+            #Adding PAD if it is neccessary
+            padding_length= self.max_length- len(input_ids)
+            if padding_length > 0 :
+                input_ids= input_ids + [tokenizer.pad_token_id] * padding_length
+                attention_mask= attention_mask + [0] * padding_length
+                labels= labels + [-100] * padding_length              #for padding tokens we give '-100' as label in order to be ignored by LOSS function later
+    
+    
+            return {                                                  #PyTorch works with tensors not raw python lists so our output is a dictionary of tensors
+                'input_ids': torch.tensor(input_ids, dtype=torch.long),
+                'attention_mask': torch.tensor(attention_mask, dtype=torch.long),
+                'labels': torch.tensor(labels, dtype=torch.long)
+            }
+        
+print("✓ Custom dataset class defined")    
