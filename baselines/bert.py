@@ -315,3 +315,47 @@ class NERDataset(Dataset):              #the Dataset that we imported here => fr
             }
         
 print("✓ Custom dataset class defined")    
+
+
+# Create datasets
+print("Creating training datasets...")
+
+train_dataset = NERDataset(processed_train)
+dev_dataset = NERDataset(processed_dev)
+
+print(f"✓ Training dataset: {len(train_dataset)} examples")
+print(f"✓ Dev dataset: {len(dev_dataset)} examples")
+
+
+#Setup 'data collator' for token classification -- Collator in ML means it makes some data smaples into a batch (gives padding, convert to a correct format,...)
+data_collator= DataCollatorForTokenClassification(
+    tokenizer= tokenizer,
+    padding= True,        #it pads all of the samples untill it reaches the longest sample in that batch(a group of sample) 
+    return_tensors='pt'   #return the output as PyTorch tensors
+)
+print("✓ Data collator initialized")
+
+
+
+training_args = TrainingArguments(
+    output_dir=output_model_dir,
+    learning_rate=2e-5,
+    per_device_train_batch_size=8,
+    per_device_eval_batch_size=8,
+    num_train_epochs=3,            #epoch => how many times it has seen the entire dataset. if it is high it leads to overfitting
+    weight_decay=0.01,             #for preventing overfitting
+    eval_strategy="epoch",         #after each epoches it evaluates the output
+    save_strategy="epoch",         #after each epoches it saves the output
+    load_best_model_at_end=True,   #reload the best checkpoint => a saved version of the model during training that we save in a specific time, and can be reused agin 
+    push_to_hub=False,             #HuggingFace Hub is an online platform for sharing models etc.
+    logging_steps=100,             #it logs after 100 steps
+    save_total_limit=2,
+    seed=42,
+    fp16=torch.cuda.is_available(),
+    report_to="none"
+)
+
+print("✓ Training configuration ready")
+print(f"  Batch size: {training_args.per_device_train_batch_size}")
+print(f"  Epochs: {training_args.num_train_epochs}")
+print(f"  Learning rate: {training_args.learning_rate}")
