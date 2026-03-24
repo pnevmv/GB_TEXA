@@ -391,3 +391,23 @@ print("\n" + "="*60)
 print("✓ TRAINING COMPLETED!")
 print("="*60)
 print(f"Training time: {training_duration/60:.2f} minutes")
+
+
+#Saving the new model
+os.makedirs(output_model_dir, exist_ok=True)
+trainer.save_model(output_model_dir)             #"Trainer" save the fine-tune model that it has trained so far in that directory
+tokenizer.save_pretrained(output_model_dir)      #we also should save the used tokenizer because whenever we are using upper model as inference, we should use exactly same preprocessing- tokenizer that we used in training
+                                                  #save_pretrained() saves the tokenizer to a directory in Hugging Face format to be used again with from_pretrained()
+print(f"✓ Model saved to: {output_model_dir}")
+
+
+
+#Loading the trained model for inference
+inference_model= AutoModelForTokenClassification.from_pretrained(output_model_dir)
+inference_tokenizer= AutoTokenizer.from_pretrained(output_model_dir)
+inference_model.eval()        #switches the model from training mode to evaluation mode.
+
+# if torch.cuda.is_available():
+#   inference_model=inference_model.cuda                #later I use .cuda in predict_entities function so it would be twoso I commented it
+
+print(f"✓ Model loaded from: {output_model_dir}")
