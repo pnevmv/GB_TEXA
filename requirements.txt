@@ -2,10 +2,11 @@
 gliner
 #torch==2.4.1
 transformers
-huggingface_hub>
-onnxruntime-gpu
+huggingface_hub
+onnxruntime
 sentencepiece
 tqdm
+accelerate>=1.1.0
 
 # ATLOP requirements
 numpy
