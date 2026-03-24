@@ -60,7 +60,7 @@ model_name = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext"  # 
 output_model_dir = r"D:\models\bert_biomedbert_ner"
 
 
-
+#///////
 
 #Reading data folders from multipule files with this method
 def load_ner_data(file_paths):
@@ -116,3 +116,26 @@ def prepare_documents_for_ner(data):
 
 
 print("✓ Data loading functions defined")    
+
+
+#/////
+
+# Load training data from three quality levels
+train_files = [
+    r"D:/conda_envs/Annotations/Train/gold_quality/json_format/train_gold.json",
+    r"D:/conda_envs/Annotations/Train/bronze_quality/json_format/train_bronze.json",
+    r"D:/conda_envs/Annotations/Train/silver_quality/json_format/train_silver.json"
+]
+
+train_data= load_ner_data(train_files)
+train_documents = prepare_documents_for_ner(train_data)
+
+print(f"\nTotal training documents: {len(train_documents)}")
+print(f"Total training text segments: {len(train_data)}")
+
+
+# Load dev data
+dev_data = load_ner_data([r"D:/conda_envs/Annotations/Dev/json_format/dev.json"])
+dev_documents = prepare_documents_for_ner(dev_data)
+
+print(f"Total dev documents: {len(dev_documents)}")
