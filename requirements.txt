@@ -1,0 +1,19 @@
+# GLiNER requirements
+gliner
+#torch==2.4.1
+transformers
+huggingface_hub>
+onnxruntime-gpu
+sentencepiece
+tqdm
+
+# ATLOP requirements
+numpy
+opt-einsum
+wandb
+ujson
+tqdm
+pandas
+
+# Additional requirements
+nltk
