@@ -159,3 +159,77 @@ print(f"✓ Tokenizer loaded: {tokenizer.__class__.__name__}")
 print(f"✓ Model loaded with {model.num_labels} labels")
 print(f"  Vocabulary size: {tokenizer.vocab_size}")
 
+
+#/////
+
+def align_labels_with_tokens(text, entities, tokenizer, label2id):
+    """
+    Create BIO tags for tokenized text based on character-level entity annotations.
+    Uses offset mapping to align character positions with token positions.
+    """
+    #Tokenize and get offset mapping
+    encoding= tokenizer(              #encoding is the output if the tokenizer (a dictionary)
+        text,
+        add_special_tokens= True,
+        return_offsets_mapping= True,
+        truncation=True,              #if the number of tokens exceeds from max_length it truns them
+        max_length=512     
+    )
+
+    tokens= tokenizer.convert_ids_to_tokens(encoding['input_ids'])
+    offset_mapping=  encoding['offset_mapping']  
+
+    #initial all labels as 'O' outside
+    labels= ['O']* len(tokens)
+
+    #sort entities by start position to handle overlaps (first the intial or longer entities)
+    sorted_entities= sorted(entities, key=lambda e: (e['start_idx'], -(e['end_idx'] - e['start_idx'])))    #sorted method needs a key to sort the items based on it. here it sorts the entities which come first, if their start index were same, it choses the longest one (second priority)
+
+    #track which tokens have been labeled 
+    labeled_positions= set()              #we define a set instead of array because when we want to check if it is repeated or  not, since set uses hash table it is faster than array exploring. also set doesn't add repeated values
+
+    #for each entity with labels we find the associated tokens in our text
+    for entity in sorted_entities :
+        entity_start= entity['start_idx']
+        entity_end= entity['end_idx']
+        entity_label= entity['label']
+
+        #find tokens that overlap with this entity 
+        entity_token_star= None
+        entity_token_end=None
+
+#-------------------------------------------------------------------------- This section finds out which tokens belongs to one entity. for example: New York City - we have New, York, City tokens[1-3] all belonging to one entity labeled as LOC. So entity_token_star stays at 1 and entity_token_end become 3 after 3 iteration.       
+        for idx, (start_token, end_token) in enumerate(offset_mapping):
+            #skip special chars
+            if start_token==0 and end_token== 0:
+                continue
+            #check if token overlaps with entity
+            if start_token< entity_end and end_token> entity_start :  #it doesn't have to be fully inside the entity, it also can only overlap -even one commen char 
+                if entity_token_star is None:
+                    entity_token_star= idx
+                entity_token_end= idx
+#------------------------------------------------------------------------- we get the labels combined with BIO tags
+         #Apply BIO tagging
+        if entity_token_star is not None and entity_token_end is not None:
+            for index in range (entity_token_star, entity_token_end+1):
+                    # Only label this token if not already labeled (handle overlaps)
+                if index not in labeled_positions:
+                    if index == entity_token_star :
+                        labels[index]= f'B-{entity_label}'
+                    else:
+                        labels[index]=f'I-{entity_label}'
+    
+                    labeled_positions.add(index)    
+#---------------------------------------------------------------------------
+    # Convert labels to IDs
+    label_ids = [label2id.get(label, label2id['O']) for label in labels]     #GET method gets labels but if it wasn't inside label2id dictionary that we have defined in the begining it will write 'O' as DEFAULT value
+        
+    return {
+        'input_ids': encoding['input_ids'],
+        'attention_mask': encoding['attention_mask'],
+        'labels': label_ids,
+        'tokens': tokens
+    }      
+            
+print("✓ BIO tag generation function defined")                  
+              
