@@ -359,3 +359,35 @@ print("✓ Training configuration ready")
 print(f"  Batch size: {training_args.per_device_train_batch_size}")
 print(f"  Epochs: {training_args.num_train_epochs}")
 print(f"  Learning rate: {training_args.learning_rate}")
+
+#////
+
+
+# Initialize Trainer
+print("Initializing Trainer...")
+trainer= Trainer(
+    model= model,
+    args= training_args,
+    train_dataset= train_dataset,
+    eval_dataset= dev_dataset,
+    processing_class= tokenizer,      #!!!! in recent models of Trainer they use "processing class" but previously it was "tokenizer"
+    data_collator= data_collator
+)
+
+print("✓ Trainer initialized")
+
+#Start training...
+print("="*60)
+print("Starting model training...")
+print("="*60)
+
+import time
+training_start_time= time.time()
+
+train_result= trainer.train()
+
+training_duration= time.time()- training_start_time
+print("\n" + "="*60)
+print("✓ TRAINING COMPLETED!")
+print("="*60)
+print(f"Training time: {training_duration/60:.2f} minutes")
