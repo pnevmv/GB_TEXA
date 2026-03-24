@@ -58,3 +58,61 @@ print(f"The 10 first label are: {label_list[:10]}")
 # Model configuration
 model_name = "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext"  # BioBERT for biomedical text
 output_model_dir = r"D:\models\bert_biomedbert_ner"
+
+
+
+
+#Reading data folders from multipule files with this method
+def load_ner_data(file_paths):
+    """
+    Load NER data from multiple JSON files.
+    Each file contains documents with entities.
+    """
+    all_data= {}  #it is a dictionary which assembles all the data which are dictionary as well (data:{ "36675":{"metadata.."} , "12334":".." , ... })
+    for file_path in file_paths:
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding='utf-8') as f:
+                data=json.load(f)
+            all_data.update(data)
+            print(f'loaded {len(data)} documents from {os.path.basename(file_path)}')
+        else:
+            print(f"Warning: {file_path} not found")
+
+    return all_data  
+
+
+#Putting data in a format thta we want to use in NER
+def prepare_documents_for_ner(data):
+    """
+    Convert raw data into structured format for NER.
+    Each document has title and abstract as separate text segments.
+    """
+    document=[]
+
+    for pmid, article in data.items():
+        #Process title
+        title_text= article["metadata"]["title"]
+        title_entities= [e for e in article["entities"] if e["location"]=="title"]
+
+        document.append({
+            "pmid" : pmid,
+            "location" : "title",
+            "text" : title_text,
+            "entities" : title_entities
+        })
+
+        #Process abstract
+        abstract_text= article['metadata']['abstract']
+        abstract_entities=[e for e in article['entities'] if e['location']== 'abstract']
+
+        document.append({
+            "pmid" : pmid,
+            "location" : "abstract",
+            "text" : abstract_text,
+            "entities" : abstract_entities
+        })
+
+    return document   
+
+
+print("✓ Data loading functions defined")    
