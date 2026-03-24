@@ -233,3 +233,45 @@ def align_labels_with_tokens(text, entities, tokenizer, label2id):
             
 print("✓ BIO tag generation function defined")                  
               
+
+#////
+              
+
+
+#Process training data
+print("Processing training data...")
+processed_train = []
+
+for i, doc in enumerate(tqdm(train_documents, desc="Processing train")):    #tqdm is terminal processing bar and desc is the description of our bar
+    processed = align_labels_with_tokens(
+        doc['text'],
+        doc['entities'],
+        tokenizer,
+        label2id
+    )
+    processed['pmid'] = doc['pmid']
+    processed['location'] = doc['location']
+    processed['text'] = doc['text']
+    processed['entities'] = doc['entities']
+    processed_train.append(processed)
+
+print(f"✓ Training data processed: {len(processed_train)} documents")  
+
+
+print("Processing dev data...")
+processed_dev = []
+
+for i, doc in enumerate(tqdm(dev_documents, desc="Processing dev")):
+    processed= align_labels_with_tokens(
+        doc['text'],
+        doc['entities'],
+        tokenizer,
+        label2id
+    )
+    processed['pmid']=doc['pmid']
+    processed['location'] = doc['location']
+    processed['text'] = doc['text']
+    processed['entities'] = doc['entities']
+    processed_dev.append(processed)
+
+print(f"✓ Dev data processed: {len(processed_dev)} documents")      
