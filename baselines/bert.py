@@ -411,3 +411,85 @@ inference_model.eval()        #switches the model from training mode to evaluati
 #   inference_model=inference_model.cuda                #later I use .cuda in predict_entities function so it would be twoso I commented it
 
 print(f"✓ Model loaded from: {output_model_dir}")
+
+
+def predict_entities(model, tokenizer, text, id2label):
+    """
+    Perform NER inference on a single text.
+    Returns list of entities with their positions and labels.
+    """
+    #Tokenize
+    encoding= tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        padding=True,
+        return_offsets_mapping=True,
+        max_length=512
+    )
+
+    offset_mapping= encoding.pop('offset_mapping')[0].numpy()
+                  
+    # Move to GPU if available /////  I commented it because it is overriding here using cuda
+    # if torch.cuda.is_available():
+    #     encoding = {k: v.cuda() for k, v in encoding.items()}
+
+    encoding = {k: v for k, v in encoding.items()}
+
+    #Predict without updating the weights and computing gradient
+    with torch.no_grad():
+      outputs= model(**encoding)    # ** opens the dictionary
+      predictions= torch.argmax(outputs.logits, dim=-1)[0].cpu().numpy()
+                  #argmax: give me the argument with max value
+                  #logits: for each token, tokenizer predict some possible classes(labels) with raw score called logit. in fact it shows which lable is probably the correct one
+                  #dim=-1: do the request on the last dimension which is the labels class
+                  #we return the data to cpu because numpy runs only on cpu
+
+    # Convert predictions to labels
+    predicted_labels= [id2label[pred]for pred in predictions]
+
+    #Extract entities from BIO tags; so far we have taken the labels in BIO tags but as output we have a specific format: text, start/end char/ pure lable
+    entities=[]
+    current_entity= None
+
+    for idx,( label , (start_char, end_char)) in enumerate(zip(predicted_labels, offset_mapping)):
+
+      #Skip special tokens
+      if start_char==0 and end_char==0:
+        continue
+
+      if label.startswith('B-'):
+        #if there is already an entity, we should save it first. because with every 'B-' we start a new entity
+        if current_entity:
+          entities.append(current_entity)
+
+        #Start a new entity
+        entity_label= label[2:]  # Remove 'B-' prefix
+        current_entity={
+            'start_idx': start_char,
+            'end_idx': end_char-1,        #in offset mapping we have [start, end). ex: PARIS -> (0,5)
+            'label': entity_label,
+            'text_span': text[start_char: end_char]
+        }
+
+      if label.startswith('I-') and current_entity:
+        #Extend current_entity
+        entity_label= label[2:]   # Remove 'I-' prefix
+        if entity_label == current_entity['label']:
+          current_entity['end_idx']= end_char-1
+          current_entity['text_span']= text[ current_entity['start_idx'] : end_char]
+
+      else:
+        # Outside or label mismatch - save current entity
+        if current_entity:
+          entities.append(current_entity)
+          current_entity=None
+
+
+   # Save last entity if exists
+    if current_entity:
+        entities.append(current_entity)
+
+    return entities
+
+print("✓ Inference function defined")
