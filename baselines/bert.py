@@ -139,3 +139,23 @@ dev_data = load_ner_data([r"D:/conda_envs/Annotations/Dev/json_format/dev.json"]
 dev_documents = prepare_documents_for_ner(dev_data)
 
 print(f"Total dev documents: {len(dev_documents)}")
+
+
+#/////
+
+
+# Initialize tokenizer and model
+print("Initializing BERT tokenizer and model...")
+
+tokenizer= AutoTokenizer.from_pretrained(model_name)
+model= AutoModelForTokenClassification.from_pretrained(     #where we tell the model what labels it should work with
+    model_name,
+    num_labels= len(label_list),
+    id2label=id2label,
+    label2id=label2id
+)
+
+print(f"✓ Tokenizer loaded: {tokenizer.__class__.__name__}")
+print(f"✓ Model loaded with {model.num_labels} labels")
+print(f"  Vocabulary size: {tokenizer.vocab_size}")
+
